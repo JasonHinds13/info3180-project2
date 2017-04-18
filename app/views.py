@@ -1,10 +1,3 @@
-"""
-Flask Documentation:     http://flask.pocoo.org/docs/
-Jinja2 Documentation:    http://jinja.pocoo.org/2/documentation/
-Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
-This file creates your application.
-"""
-
 from app import app
 from flask import render_template, request, redirect, url_for, jsonify, make_response
 from bs4 import BeautifulSoup
@@ -20,21 +13,39 @@ from imageGetter import *
 def home():
     """Render website's home page."""
     return render_template('home.html')
-    
-@app.route('/api/thumbnails')
+
+@app.route("/api/users/register", methods=["POST"])
+def register():
+    pass
+
+@app.route("/api/users/login", methods=["POST"])
+def login():
+    pass
+
+@app.route("/api/users/<int:userid>/wishlist", methods=["GET","POST"])
+def wishlist(userid):
+
+    if request.method == "GET":
+        pass
+    elif request.method == "POST":
+        pass
+
+@app.route('/api/thumbnails', methods=["GET"])
 def thumbnails():
     """API for thumbnails"""
-    
-    res = {"error": "null", "message": "success", "thumbnails": getImg()} 
-    
-    response = make_response(jsonify(res))                                     
-    response.headers['Content-Type'] = 'application/json'       
-    
-    return response
 
-@app.route('/thumbnails/view')
-def thumbview():
-    return render_template('thumbnails.html')
+    if request.method == "GET":
+
+        res = {"error": "null", "message": "success", "thumbnails": getImg()}
+
+        response = make_response(jsonify(res))
+        response.headers['Content-Type'] = 'application/json'
+
+        return response
+
+@app.route("/api/users/<int:userid>/wishlist/<int:itemid>", methods=["DELETE"])
+def deleteitem(userid,itemid):
+    pass
 
 ###
 # The functions below should be applicable to all Flask apps.
