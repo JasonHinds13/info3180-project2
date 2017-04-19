@@ -1,9 +1,10 @@
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, jsonify, make_response
+from flask import render_template, request, redirect, url_for, jsonify, make_response,session
 from flask_login import login_user, logout_user, current_user, login_required
 from bs4 import BeautifulSoup
 import requests
 import urlparse
+import random
 from forms import *
 from models import *
 from imageGetter import *
@@ -23,7 +24,9 @@ def register():
         username = form.username.data
         password = form.password.data
 
-        new_user = UserProfile(username=username, first_name=first_name, last_name=last_name, password=password)
+        uid = genId(first_name,last_name,random.randint(1,100))
+
+        new_user = UserProfile(userid=uid, username=username, first_name=first_name, last_name=last_name, password=password)
 
         db.session.add(new_user)
         db.session.commit()
@@ -39,8 +42,11 @@ def wishlist(userid):
         pass
 
 @app.route('/api/thumbnails', methods=["GET"])
-def thumbnails(url):
+def thumbnails():
     """API for thumbnails"""
+
+    # pass url in query string
+    url = request.args.get("url")
 
     if request.method == "GET":
 
@@ -68,11 +74,12 @@ def login():
 
         if user is not None:
             login_user(user)
+            session["userid"] = user.userid
             flash('Logged in successfully.', 'success')
             #return redirect(url_for("secure_page")) # they should be redirected to a secure-page route instead
 
         else:
-            #flash('Username or Password is incorrect.', 'danger')
+            flash('Username or Password is incorrect.', 'danger')
             #return
 
 @app.route("/logout")
@@ -108,6 +115,20 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return render_template('404.html'), 404
+
+def genId(fname, lname, num):
+    nid = []
+    for x in fname:
+        nid.append(str(ord(x)))
+    for x in lname:
+        nid.append(str(ord(x)))
+    nid.append(str(num))
+
+    random.shuffle(nid)
+
+    nid = "".join(nid)
+
+    return nid[:7]
 
 
 if __name__ == '__main__':
