@@ -37,9 +37,25 @@ def register():
 def wishlist(userid):
 
     if request.method == "GET":
-        pass
+        wishlist = WishListItem.query.filter_by(userid=userid).all()
+        return jsonify(wishlist)
+
     elif request.method == "POST":
-        pass
+        form = WishListForm()
+
+        if form.validate_on_submit():
+            userid = sesson["userid"]
+            title = form.title.data
+            description = form.description.data
+            website = form.description.data
+            thumbnail = form.thumbnail.data
+
+            itemid = genId(title,website,random.randint(1,100))
+
+            witem = WishListItem(itemid=itemid,userid=userid,title=title,description=description,website=website,thumbnail=thumbnail)
+
+            db.session.add(witem)
+            db.session.commit()
 
 @app.route('/api/thumbnails', methods=["GET"])
 def thumbnails():
@@ -59,7 +75,12 @@ def thumbnails():
 
 @app.route("/api/users/<int:userid>/wishlist/<int:itemid>", methods=["DELETE"])
 def deleteitem(userid,itemid):
-    pass
+    witem = WishListItem.query.filter_by(userid=userid,itemid=itemid).first()
+
+    db.session.delete(witem)
+    db.session.commit()
+
+    return jsonify({"success":"True"})
 
 @app.route("/api/users/login", methods=["POST"])
 def login():
