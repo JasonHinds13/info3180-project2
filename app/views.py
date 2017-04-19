@@ -1,13 +1,12 @@
-from app import app
+from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, jsonify, make_response
+from flask_login import login_user, logout_user, current_user, login_required
 from bs4 import BeautifulSoup
 import requests
 import urlparse
+from forms import *
+from models import *
 from imageGetter import *
-
-###
-# Routing for your application.
-###
 
 @app.route('/')
 def home():
@@ -16,11 +15,20 @@ def home():
 
 @app.route("/api/users/register", methods=["POST"])
 def register():
-    pass
+    form = SignUpForm()
 
-@app.route("/api/users/login", methods=["POST"])
-def login():
-    pass
+    if form.validate_on_submit():
+        first_name = form.first_name.data
+        last_name = form.last_name.data
+        username = form.username.data
+        password = form.password.data
+
+        new_user = UserProfile(username=username, first_name=first_name, last_name=last_name, password=password)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        return "Success"
 
 @app.route("/api/users/<int:userid>/wishlist", methods=["GET","POST"])
 def wishlist(userid):
@@ -31,12 +39,12 @@ def wishlist(userid):
         pass
 
 @app.route('/api/thumbnails', methods=["GET"])
-def thumbnails():
+def thumbnails(url):
     """API for thumbnails"""
 
     if request.method == "GET":
 
-        res = {"error": "null", "message": "success", "thumbnails": getImg()}
+        res = {"error": "null", "message": "success", "thumbnails": getImg(url)}
 
         response = make_response(jsonify(res))
         response.headers['Content-Type'] = 'application/json'
@@ -47,9 +55,36 @@ def thumbnails():
 def deleteitem(userid,itemid):
     pass
 
-###
-# The functions below should be applicable to all Flask apps.
-###
+@app.route("/api/users/login", methods=["POST"])
+def login():
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        uname = form.username.data
+        pword = form.password.data
+
+        user = UserProfile.query.filter_by(username=uname, password=pword).first()
+
+        if user is not None:
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            #return redirect(url_for("secure_page")) # they should be redirected to a secure-page route instead
+
+        else:
+            #flash('Username or Password is incorrect.', 'danger')
+            #return
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'danger')
+    return redirect(url_for('home'))
+
+@login_manager.user_loader
+def load_user(id):
+    return UserProfile.query.get(int(id))
 
 @app.route('/<file_name>.txt')
 def send_text_file(file_name):
